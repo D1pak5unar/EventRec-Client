@@ -12,6 +12,22 @@
 ### Server:
 A client server architecture, where server gathers the events where client(mobile app) lets server know the preferences and location of the user. The server will then recommend the user with the events they might want to join/visit.
 
+To run the server, first run python3 create_database.py to set up the database. you will get a users.db file in your directory
+
+Next run the server, python3 server.py
+
+The server accepts request from the client and will perform the appropriate actions based on the data recieved
+
+A test client file has been created to simulate sending data to server
+
+All python3 client.py or python3 client.py -h to bring up the help menu that displays all flags and commands available
+
+All the commands in the help menu are fully functional. The help menu will show you the flags available, how to run the commands, and the flags required per command. 
+
+The server accepts the commands sent to the client via JSON data. After reciving a command the server will display the address from the client that requested the command as well as the command and the JSON data sent. The server will then send JSON data back to the client. The content varies per command, However, the general format is a status which indicates if the request succeeded or failed and a message from the server. 
+
+The server sets up a socket using local host on port 9000. IT then proceeds to bind, listen, then accept any requests from clients. 
+
 ### Client:
 
 
