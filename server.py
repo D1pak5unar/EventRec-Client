@@ -710,6 +710,12 @@ def handle_command(data):
                 data_from_function = set_fav_sport(user_id, title)
             else:
                 data_from_function = "Invalid arguments for this command"
+                
+        if command == 'recommend':
+            if user_id and latitude and longitude:
+                data_from_function = recommend_events(latitude, longitude, user_id)
+            else:
+                data_from_function = "Invalid arguments for this command"
         
         return data_from_function   
     
@@ -792,13 +798,148 @@ def main():
     # offset by one since the input starts at 0
     events = get_sports_events(latitude, longitude,radius_user,limit_user+1)
     return_events(events, radius_user)
-    create_account("test@test.com", "test")
-    login("test@test.com", "test")
+    #create_account("test@test.com", "test")
+    #login("test@test.com", "test")
+    
+import sqlite3
 
+def get_all_friend_ids(user_id):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Retrieve friends for the user (user_id, friend_id)
+    cursor.execute("SELECT user_id, friend_id FROM friends WHERE user_id=?", (user_id,))
+    friends_1 = cursor.fetchall()
+
+    # Retrieve friends for the user (friend_id, user_id)
+    cursor.execute("SELECT friend_id, user_id FROM friends WHERE friend_id=?", (user_id,))
+    friends_2 = cursor.fetchall()
+
+    # Combine the two lists of friends
+    friends = friends_1 + friends_2
+
+    # Extract friend IDs
+    friend_ids = set()
+    for friend_pair in friends:
+        # Add both user_id and friend_id to ensure all friends are included
+        if friend_pair[0] != user_id:  # Exclude the user's own ID
+            friend_ids.add(friend_pair[0])
+        if friend_pair[1] != user_id:  # Exclude the user's own ID
+            friend_ids.add(friend_pair[1])
+    return list(friend_ids)
+
+def get_user_preferences(user_id):
+    # Connect to the database
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Retrieve friends' IDs
+    friend_ids = get_all_friend_ids(user_id)
+
+    # Execute a query to fetch user preferences
+    cursor.execute("SELECT fav_team, fav_sport FROM users WHERE user_id = ?", (user_id,))
+    user_preferences = cursor.fetchone()
+    
+    # Fetch preferences for friends
+    friends_preferences = []
+    for friend_id in friend_ids:
+        if friend_id != user_id:  # Skip the user's own ID
+            cursor.execute("SELECT fav_team, fav_sport FROM users WHERE user_id = ?", (friend_id,))
+            friend_preference = cursor.fetchone()
+            if friend_preference:
+                friends_preferences.append(friend_preference)
+
+    # Close the connection
+    conn.close()
+    return user_preferences, friends_preferences
+
+
+def recommend_events(latitude, longitude, user_id):
+    radius = "50km"
+    # Retrieve user preferences and friends' preferences from the database
+    user_preferences, friends_preferences = get_user_preferences(user_id)
+    if user_preferences is None:
+        print("User preferences not found.")
+        return None
+
+    fav_team, fav_sport = user_preferences
+
+    # API parameters
+    user_params = {
+        'category': 'sports',
+        'within': f'{radius}@{latitude},{longitude}',
+        'duplicates': 'ignore',  # Specify how to handle duplicates,
+    }
+    user_headers = {
+        'Authorization': f'Bearer {API_KEY}',
+    }
+    
+    # Send get request to the predicthq api
+    response = requests.get(BASE_URL, params=user_params, headers=user_headers)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse and process the response JSON
+        events_data = response.json()["results"]
+        
+        # Rank events based on relevance 
+        ranked_events = []
+        for event in events_data:
+            # Calculate relevance score
+            relevance_score = 0
+            # Check if event title or labels contain the user's favorite team or sport
+            if fav_sport in event["title"] or fav_sport in event["labels"]:
+                relevance_score += 1
+            if fav_team in event["title"] or fav_team in event["labels"]:
+                relevance_score += 1
+            
+            # Add relevance score for user's preferences
+            for friend_preference in friends_preferences:
+                friend_fav_team, friend_fav_sport = friend_preference
+                if friend_fav_team in event["title"] or friend_fav_team in event["labels"]:
+                    relevance_score += 0.5
+                if friend_fav_sport in event["title"] or friend_fav_sport in event["labels"]:
+                    relevance_score += 0.5
+            
+            # Add ranking score to event data
+            event["rank"] = relevance_score
+            
+            ranked_events.append(event)
+        
+        # Sort events by ranking score
+        ranked_events.sort(key=lambda x: x["rank"], reverse=True)
+        
+        # Return the event with the highest rank as JSON
+        if ranked_events:
+            highest_rank_event = ranked_events[0]
+            event_data = {
+                "status": "Success",
+                "event": {
+                    "Title": highest_rank_event["title"],
+                    "Rank Score": highest_rank_event["rank"],
+                    "Labels": highest_rank_event.get("labels", []),
+                    "Entities": highest_rank_event.get("entities", [])
+                }
+            }
+            return event_data
+        else:
+            print("No events found.")
+            return {"status": "No events found."}
+    
+    else:
+        print("Failed to retrieve events:", response.status_code)
+        return None
 if __name__ == "__main__":
     #main()
     create_server()
     
+    #recommend_events(38,-122, 2)
+    #recommend_events(38,-122, 5)
+    
+    #recommend_events(38,-90.2, 1)
+    #recommend_events(38,-90.2, 3)
+    #recommend_events(38, -122, 4)
+
 # create connection to the database
 # Example usage:
 #latitude = 37.7749  # Example latitude (San Francisco)

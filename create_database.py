@@ -42,11 +42,12 @@ conn.commit()
 
 # Populate users table with test data
 test_accounts = [
-    ("123@hotmail.com", "Watson","Ace Titans", "tennis"),
-    ("test@gmail.com", "test", "Gridiron Guardians", "football"),
-    ("example@aol.com", "aol", "Global United", "soccer"),
-    ("waldo@google.com", "horse", "Elite Ballers", "basketball"),
-    ("james@yahoo.con", "bird", "Diamond Kings", "baseball"),
+    ("123@hotmail.com", "Watson","Youth Basketball", "tennis"),
+    ("test@gmail.com", "test", "Oakland Athletics", "football"),
+    ("example@aol.com", "aol", "Los Angeles Dodgers", "soccer"),
+    ("waldo@google.com", "horse", "Youth Basketball", "basketball"),
+    ("james@yahoo.con", "bird", "Chicago White Sox", "baseball"),
+    ("mason@yahoo.con", "dog", "Cardinals", "running"),
     # Add more test accounts here
 ]
 
