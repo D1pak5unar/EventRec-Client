@@ -8,10 +8,31 @@
 - [Sean Clewis]
 
 ## High Level Design:
+Client Side:
 
-### Server:
-A client server architecture, where server gathers the events where client(mobile app) lets server know the preferences and location of the user. The server will then recommend the user with the events they might want to join/visit.
+    The client side is responsible for interacting with users and sending requests to the server.
+    It consists of a user interface (UI) layer that allows users to input commands or actions.
+    The UI layer communicates with a client application layer, which prepares the requests to be sent to the server.
+    The client application layer serializes the requests into JSON format before sending them to the server.
+    Upon receiving responses from the server, the client application layer deserializes the JSON data and updates the UI accordingly.
 
+Server Side:
+
+    The server side handles incoming requests from clients, processes them, and sends back responses.
+    It consists of a network layer responsible for handling incoming connections and routing requests to appropriate handlers.
+    The network layer deserializes incoming JSON data and passes it to the server application layer.
+    The server application layer interprets the requests, performs necessary actions, and prepares responses.
+    After processing, the server application layer serializes the response data into JSON format and sends it back to the client.
+    The network layer then sends the JSON response to the appropriate client.
+
+Communication Protocol:
+
+    The communication between client and server follows a request-response pattern.
+    Clients initiate requests by sending JSON-formatted messages containing commands or data to the server.
+    Servers respond to client requests with JSON-formatted messages containing the results of the requested actions or any relevant data.
+    Both clients and servers should agree upon a set of predefined JSON message formats for requests and responses to ensure interoperability.
+
+### Server implementation:
 To run the server, first run python3 create_database.py to set up the database. you will get a users.db file in your directory
 
 Next run the server, python3 server.py
