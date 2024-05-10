@@ -853,7 +853,6 @@ def get_user_preferences(user_id):
     conn.close()
     return user_preferences, friends_preferences
 
-
 def recommend_events(latitude, longitude, user_id):
     radius = "50km"
     # Retrieve user preferences and friends' preferences from the database
